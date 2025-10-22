@@ -12,7 +12,8 @@ for dir in "${make_directories[@]}"; do
     mkdir -p "$INSTANCE_SERVER_DIR/$dir"
 done
 
-cp -R "$BASE_SERVER_DIR/game/csgo/cfg" "$INSTANCE_SERVER_DIR/game/csgo/cfg"
+cp -R "$BASE_SERVER_DIR/game/csgo/cfg" "$INSTANCE_SERVER_DIR/game/csgo"
+rm "$INSTANCE_SERVER_DIR/game/csgo/cfg/server.cfg"
 
 if [ ! -d "$BASE_SERVER_DIR/game/bin/linuxsteamrt64/steamapps" ]; then
     mkdir -p "$BASE_SERVER_DIR/game/bin/linuxsteamrt64/steamapps"
@@ -27,6 +28,9 @@ for file in "$BASE_SERVER_DIR/game/bin/linuxsteamrt64"/*; do
         fi
     fi
 done
+
+echo "---Install Addons---"
+cp -r "/opt/addons" "${INSTANCE_SERVER_DIR}/game/csgo"
 
 echo "---Create Symbolic Links---"
 
@@ -51,25 +55,47 @@ create_symlinks() {
     done
 }
 
-create_symlinks "$BASE_SERVER_DIR" "$INSTANCE_SERVER_DIR"
-
 if [ "$SERVER_TYPE" = "Ranked" ]; then
   cp "/opt/server-cfg/ranked.server.cfg" "$INSTANCE_SERVER_DIR/game/csgo/cfg/server.cfg"
-else
-  cp "/opt/server-cfg/public.server.cfg" "$INSTANCE_SERVER_DIR/game/csgo/cfg/server.cfg"
+  cp "/opt/server-cfg/5stack.lan.cfg" "$INSTANCE_SERVER_DIR/game/csgo/cfg"
+  cp "/opt/server-cfg/5stack.base.cfg" "$INSTANCE_SERVER_DIR/game/csgo/cfg"
+  cp "/opt/server-cfg/5stack.warmup.cfg" "$INSTANCE_SERVER_DIR/game/csgo/cfg"
+  cp "/opt/server-cfg/5stack.knife.cfg" "$INSTANCE_SERVER_DIR/game/csgo/cfg"
+  cp "/opt/server-cfg/5stack.live.cfg" "$INSTANCE_SERVER_DIR/game/csgo/cfg"
+  cp "/opt/server-cfg/5stack.duel.cfg" "$INSTANCE_SERVER_DIR/game/csgo/cfg"
+  cp "/opt/server-cfg/5stack.wingman.cfg" "$INSTANCE_SERVER_DIR/game/csgo/cfg"
+  cp "/opt/server-cfg/5stack.competitive.cfg" "$INSTANCE_SERVER_DIR/game/csgo/cfg"
 fi
 
-cp "/opt/server-cfg/5stack.lan.cfg" "$INSTANCE_SERVER_DIR/game/csgo/cfg"
-cp "/opt/server-cfg/5stack.base.cfg" "$INSTANCE_SERVER_DIR/game/csgo/cfg"
-cp "/opt/server-cfg/5stack.warmup.cfg" "$INSTANCE_SERVER_DIR/game/csgo/cfg"
-cp "/opt/server-cfg/5stack.knife.cfg" "$INSTANCE_SERVER_DIR/game/csgo/cfg"
-cp "/opt/server-cfg/5stack.live.cfg" "$INSTANCE_SERVER_DIR/game/csgo/cfg"
-cp "/opt/server-cfg/5stack.duel.cfg" "$INSTANCE_SERVER_DIR/game/csgo/cfg"
-cp "/opt/server-cfg/5stack.wingman.cfg" "$INSTANCE_SERVER_DIR/game/csgo/cfg"
-cp "/opt/server-cfg/5stack.competitive.cfg" "$INSTANCE_SERVER_DIR/game/csgo/cfg"
+if [ "$SERVER_TYPE" != "Ranked" ]; then
+  if [ ! -d "/opt/custom-data" ]; then
+    mkdir -p "/opt/custom-data"
+  fi
 
-echo "---Install Addons---"
-cp -r "/opt/addons" "${INSTANCE_SERVER_DIR}/game/csgo"
+  if [ ! -d "/opt/custom-data/maps" ]; then
+    mkdir -p "/opt/custom-data/maps"
+  fi
+
+  if [ ! -e "/opt/custom-data/maps/mg_public.txt" ]; then
+    cp "/opt/server-cfg/mg_public.txt" "/opt/custom-data/maps/mg_public.txt"
+  fi
+
+  if [ ! -d "/opt/custom-data/cfg" ]; then
+    mkdir -p "/opt/custom-data/cfg"
+  fi
+
+  if [ ! -e "/opt/custom-data/cfg/server.cfg" ]; then
+    cp "/opt/server-cfg/public.server.cfg" "/opt/custom-data/cfg/server.cfg"
+  fi
+
+  if [ ! -e "/opt/custom-data/addons/counterstrikesharp/configs/core.json" ]; then
+    if [ ! -d "/opt/custom-data/addons/counterstrikesharp/configs" ]; then
+      mkdir -p "/opt/custom-data/addons/counterstrikesharp/configs"
+    fi
+    cp "/opt/custom-data/core.json" "/opt/custom-data/addons/counterstrikesharp/configs/core.json"
+  fi
+  create_symlinks "/opt/custom-data" "${INSTANCE_SERVER_DIR}/game/csgo"
+fi
 
 if $AUTOLOAD_PLUGINS = true ; then
   echo "---Install Custom Plugins---"
@@ -81,6 +107,8 @@ if $AUTOLOAD_PLUGINS = true ; then
     cp "/opt/custom-plugins/addons/counterstrikesharp/gamedata/gamedata.json" "${INSTANCE_SERVER_DIR}/game/csgo/addons/counterstrikesharp/gamedata/gamedata.json"
   fi
 fi
+
+create_symlinks "$BASE_SERVER_DIR" "$INSTANCE_SERVER_DIR"
 
 if $INSTALL_5STACK_PLUGIN = true ; then
   echo "---Install 5Stack---"
@@ -94,7 +122,6 @@ fi
 if [ ! -e "$INSTANCE_SERVER_DIR/game/csgo/addons/counterstrikesharp/configs/core.json" ]; then
     cp "/opt/server-cfg/core.json" "$INSTANCE_SERVER_DIR/game/csgo/addons/counterstrikesharp/configs"
 fi
-
 
 echo "---Check Metamod Install---"
 gameinfo_path="${INSTANCE_SERVER_DIR}/game/csgo/gameinfo.gi"
